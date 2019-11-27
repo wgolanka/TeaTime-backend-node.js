@@ -8,6 +8,7 @@ const app = express();
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({extended: false}));
 
+//TODO add readme how to start a project
 
 app.get('/teatime/tea/all', (req, res) => {
     res.status(200).send({
@@ -16,6 +17,17 @@ app.get('/teatime/tea/all', (req, res) => {
         teas: db
     })
 });
+
+function checkRequiredParams(reqBody, response) {
+    if (!reqBody.name) { //TODO add more validation
+        sendBadRequestOnMissingParam(response, 'name');
+        return false;
+    } else if (!reqBody.description) {
+        sendBadRequestOnMissingParam(response, 'description');
+        return false;
+    }
+    return true;
+}
 
 //----tea controllers ----
 
@@ -27,10 +39,8 @@ function sendBadRequestOnMissingParam(res, paramName) {
 }
 
 app.post('/teatime/tea/add', (req, res) => {
-    if (!req.body.name) { //TODO add more validation, extract to method
-        return sendBadRequestOnMissingParam(res, 'name');
-    } else if (!req.body.description) {
-        return sendBadRequestOnMissingParam(res, 'description')
+    if(!checkRequiredParams(req.body, res)){
+        return;
     }
     const tea = {
         id: uuidv1(),
