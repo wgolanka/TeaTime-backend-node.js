@@ -48,7 +48,7 @@ const stringIsAValidUrl = (s) => {
     try {
         new URL(s);
         return true;
-    } catch (err) {
+    } catch (error) {
         return false;
     }
 };
@@ -76,7 +76,7 @@ function isValidRequest(request, response) {
 
 app.post('/teatime/tea/add', (request, response) => {
 
-    if (!isValidRequest()) {
+    if (!isValidRequest(request, response)) {
         return
     }
 
@@ -104,7 +104,7 @@ function sendSuccessWithResponse(response, teas, message) {
 app.get('/teatime/tea/get/:id', (request, response) => {
     db.map((teas) => {
         if (teas.id === request.params.id) {
-            return sendSuccessWithResponse(response, teas, 'teas retried successfully');
+            return sendSuccessWithResponse(response, teas, 'tea retried successfully');
         }
     });
     return sendNotFound(response, 'tea')
@@ -148,7 +148,7 @@ app.put('/teatime/tea/update/:id', (request, response) => {
         return sendNotFound(response, 'tea');
     }
 
-    if (!isValidRequest()) {
+    if (!isValidRequest(request, response)) {
         return
     }
 
