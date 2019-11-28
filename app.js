@@ -3,27 +3,33 @@ import db from './db/db';
 import bodyParser from 'body-parser';
 
 const uuidv1 = require('uuid/v1');
-
 const app = express();
+const URL = require("url").URL;
+
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({extended: false}));
 
 //TODO add readme how to start a project
 
-app.get('/teatime/tea/all', (req, res) => {
-    res.status(200).send({
-        success: 'true',
-        message: 'teas retrieved successfully',
-        teas: db
-    })
+app.get('/teatime/tea/all', (request, response) => {
+    return sendSuccessWithResponse(response, db, 'teas retrieved successfully');
 });
 
-function checkRequiredParams(reqBody, response) {
-    if (!reqBody.name) { //TODO add more validation
+function checkAreRequiredParamsValid(reqBody, response) {
+    if (!reqBody.name) {
         sendBadRequestOnMissingParam(response, 'name');
         return false;
     } else if (!reqBody.description) {
         sendBadRequestOnMissingParam(response, 'description');
+        return false;
+    } else if (!reqBody.originCountry) {
+        sendBadRequestOnMissingParam(response, 'originCountry');
+        return false;
+    } else if (!reqBody.harvestSeason) {
+        sendBadRequestOnMissingParam(response, 'harvestSeason');
+        return false;
+    } else if (!reqBody.caffeineContent) {
+        sendBadRequestOnMissingParam(response, 'caffeineContent');
         return false;
     }
     return true;
@@ -31,106 +37,134 @@ function checkRequiredParams(reqBody, response) {
 
 //----tea controllers ----
 
-function sendBadRequestOnMissingParam(res, paramName) {
-    return res.status(400).send({
+function sendBadRequestOnMissingParam(response, paramName) {
+    return response.status(400).send({
         success: 'false',
         message: paramName + ' is required'
     });
 }
 
-app.post('/teatime/tea/add', (req, res) => {
-    if(!checkRequiredParams(req.body, res)){
-        return;
+const stringIsAValidUrl = (s) => {
+    try {
+        new URL(s);
+        return true;
+    } catch (err) {
+        return false;
     }
+};
+
+
+function sendBadRequestOnInvalidUrl(response, link) {
+    return response.status(400).send({
+        success: 'false',
+        message: link + ' is not a valid url'
+    });
+}
+
+function checkIsLinkOk(imageLink, response) {
+    if (imageLink && !stringIsAValidUrl(imageLink)) {
+        sendBadRequestOnInvalidUrl(response, imageLink);
+        return false;
+    }
+    return true;
+}
+
+function isValidRequest(request, response) {
+    return checkAreRequiredParamsValid(request.body, response) &&
+        checkIsLinkOk(request.body.imageLink, response);
+}
+
+app.post('/teatime/tea/add', (request, response) => {
+
+    if (!isValidRequest()) {
+        return
+    }
+
     const tea = {
         id: uuidv1(),
-        name: req.body.name,
-        originCountry: req.body.originCountry,
-        harvestSeason: req.body.harvestSeason,
-        caffeineContent: req.body.caffeineContent,
-        description: req.body.description,
-        imageLink: req.body.imageLink
+        name: request.body.name,
+        originCountry: request.body.originCountry,
+        harvestSeason: request.body.harvestSeason,
+        caffeineContent: request.body.caffeineContent,
+        description: request.body.description,
+        imageLink: request.body.imageLink
     };
     db.push(tea);
-    return sendSuccessWithResponse(res, tea, 'tea added successfully');
+    return sendSuccessWithResponse(response, tea, 'tea added successfully');
 });
 
-function sendSuccessWithResponse(res, teas, message) {
-    return res.status(200).send({
+function sendSuccessWithResponse(response, teas, message) {
+    return response.status(200).send({
         success: 'true',
         message: message,
         teas,
     });
 }
 
-app.get('/teatime/tea/get/:id', (req, res) => {
+app.get('/teatime/tea/get/:id', (request, response) => {
     db.map((teas) => {
-        if (teas.id === req.params.id) {
-            return sendSuccessWithResponse(res, teas, 'teas retried successfully');
+        if (teas.id === request.params.id) {
+            return sendSuccessWithResponse(response, teas, 'teas retried successfully');
         }
     });
-    return sendNotFound(res, 'tea')
+    return sendNotFound(response, 'tea')
 });
 
-app.delete('/teatime/tea/delete/:id', (req, res) => {
+function sendSuccessWithoutResponse(response, message) {
+    return response.status(200).send({
+        success: 'true',
+        message: message,
+    });
+}
+
+app.delete('/teatime/tea/delete/:id', (request, response) => {
     db.map((tea, index) => {
-        if (tea.id === req.params.id) {
+        if (tea.id === request.params.id) {
             db.splice(index, 1);
-            return res.status(200).send({
-                success: 'true',
-                message: 'tea deleted successfully',
-            });
+            return sendSuccessWithoutResponse(response, 'tea deleted successfully');
         }
     });
-    return sendNotFound(res, 'tea')
+    return sendNotFound(response, 'tea')
 });
 
-function sendNotFound(res, name) {
-    return res.status(404).send({
+function sendNotFound(response, name) {
+    return response.status(404).send({
         success: 'false',
         message: name + ' not found',
     });
 }
 
-app.put('/teatime/tea/update/:id', (req, res) => {
+app.put('/teatime/tea/update/:id', (request, response) => {
     let teaFound;
     let itemIndex;
     db.map((tea, index) => {
-        if (tea.id === req.params.id) {
+        if (tea.id === request.params.id) {
             teaFound = tea;
             itemIndex = index;
         }
     });
 
     if (!teaFound) {
-        return sendNotFound(res, 'tea');
+        return sendNotFound(response, 'tea');
     }
 
-    if (!req.body.name) { //add more validation
-        return res.status(400).send({
-            success: 'false',
-            message: 'name is required',
-        });
-    } else if (!req.body.description) {
-        return res.status(400).send({
-            success: 'false',
-            message: 'description is required',
-        });
+    if (!isValidRequest()) {
+        return
     }
 
     const updatedTodo = {
         id: teaFound.id,
-        name: req.body.name || teaFound.name,
-        originCountry: req.body.originCountry || teaFound.originCountry,
-        harvestSeason: req.body.harvestSeason || teaFound.harvestSeason,
-        caffeineContent: req.body.caffeineContent || teaFound.caffeineContent,
-        description: req.body.description || teaFound.description,
-        imageLink: req.body.imageLink || teaFound.imageLink
+        name: request.body.name || teaFound.name,
+        originCountry: request.body.originCountry || teaFound.originCountry,
+        harvestSeason: request.body.harvestSeason || teaFound.harvestSeason,
+        caffeineContent: request.body.caffeineContent || teaFound.caffeineContent,
+        description: request.body.description || teaFound.description,
+        imageLink: request.body.imageLink || teaFound.imageLink
     };
 
     db.splice(itemIndex, 1, updatedTodo);
 
-    return sendSuccessWithResponse(res, updatedTodo, 'tea updated successfully')
+    return sendSuccessWithResponse(response, updatedTodo, 'tea updated successfully')
 });
 
 
