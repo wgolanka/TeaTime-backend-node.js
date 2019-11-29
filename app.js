@@ -115,7 +115,7 @@ app.put('/teatime/tea/update/:id', (request, response) => {
         return
     }
 
-    const updatedTodo = {
+    const updatedTea = {
         id: teaFound.id,
         name: request.body.name || teaFound.name,
         originCountry: request.body.originCountry || teaFound.originCountry,
@@ -125,9 +125,9 @@ app.put('/teatime/tea/update/:id', (request, response) => {
         imageLink: request.body.imageLink || teaFound.imageLink
     };
 
-    teaStorage.splice(itemIndex, 1, updatedTodo);
+    teaStorage.splice(itemIndex, 1, updatedTea);
 
-    return httpResponse.successWithResponse(response, updatedTodo, 'tea updated successfully')
+    return httpResponse.successWithResponse(response, updatedTea, 'tea updated successfully')
 });
 
 

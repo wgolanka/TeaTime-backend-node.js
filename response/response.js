@@ -7,6 +7,13 @@ module.exports = {
         });
     },
 
+    successWithoutResponse: function (response, message) {
+        return response.status(200).send({
+            success: 'true',
+            message: message,
+        });
+    },
+
     badRequestOnMissingParam: function (response, paramName) {
         return response.status(400).send({
             success: 'false',
@@ -25,12 +32,6 @@ module.exports = {
         return response.status(404).send({
             success: 'false',
             message: name + ' not found',
-        });
-    },
-    successWithoutResponse: function (response, message) {
-        return response.status(200).send({
-            success: 'true',
-            message: message,
         });
     }
 };
