@@ -10,7 +10,6 @@ const statusResponse = require('./response/response');
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({extended: false}));
 
-//TODO add readme how to start a project
 
 app.get('/teatime/tea/all', (request, response) => {
     return statusResponse.successWithResponse(response, teaStorage, 'teas retrieved successfully');
