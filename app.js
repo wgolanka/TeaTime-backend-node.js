@@ -1,10 +1,11 @@
 import express from 'express';
-import db from './db/db';
+import teaStorage from './db/teaStorage';
 import bodyParser from 'body-parser';
 
 const uuidv1 = require('uuid/v1');
 const app = express();
 const URL = require("url").URL;
+const statusResponse = require('./response/response');
 
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({extended: false}));
@@ -12,37 +13,30 @@ app.use(bodyParser.urlencoded({extended: false}));
 //TODO add readme how to start a project
 
 app.get('/teatime/tea/all', (request, response) => {
-    return sendSuccessWithResponse(response, db, 'teas retrieved successfully');
+    return statusResponse.successWithResponse(response, teaStorage, 'teas retrieved successfully');
 });
 
-function checkAreRequiredParamsValid(reqBody, response) {
+function teaCheckAreRequiredParamsValid(reqBody, response) {
     if (!reqBody.name) {
-        sendBadRequestOnMissingParam(response, 'name');
+        statusResponse.badRequestOnMissingParam(response, 'name');
         return false;
     } else if (!reqBody.description) {
-        sendBadRequestOnMissingParam(response, 'description');
+        statusResponse.badRequestOnMissingParam(response, 'description');
         return false;
     } else if (!reqBody.originCountry) {
-        sendBadRequestOnMissingParam(response, 'originCountry');
+        statusResponse.badRequestOnMissingParam(response, 'originCountry');
         return false;
     } else if (!reqBody.harvestSeason) {
-        sendBadRequestOnMissingParam(response, 'harvestSeason');
+        statusResponse.badRequestOnMissingParam(response, 'harvestSeason');
         return false;
     } else if (!reqBody.caffeineContent) {
-        sendBadRequestOnMissingParam(response, 'caffeineContent');
+        statusResponse.badRequestOnMissingParam(response, 'caffeineContent');
         return false;
     }
     return true;
 }
 
 //----tea controllers ----
-
-function sendBadRequestOnMissingParam(response, paramName) {
-    return response.status(400).send({
-        success: 'false',
-        message: paramName + ' is required'
-    });
-}
 
 const stringIsAValidUrl = (s) => {
     try {
@@ -53,30 +47,22 @@ const stringIsAValidUrl = (s) => {
     }
 };
 
-
-function sendBadRequestOnInvalidUrl(response, link) {
-    return response.status(400).send({
-        success: 'false',
-        message: link + ' is not a valid url'
-    });
-}
-
 function checkIsLinkOk(imageLink, response) {
     if (imageLink && !stringIsAValidUrl(imageLink)) {
-        sendBadRequestOnInvalidUrl(response, imageLink);
+        statusResponse.badRequestOnInvalidUrl(response, imageLink);
         return false;
     }
     return true;
 }
 
-function isValidRequest(request, response) {
-    return checkAreRequiredParamsValid(request.body, response) &&
+function isValidTeaRequest(request, response) {
+    return teaCheckAreRequiredParamsValid(request.body, response) &&
         checkIsLinkOk(request.body.imageLink, response);
 }
 
 app.post('/teatime/tea/add', (request, response) => {
 
-    if (!isValidRequest(request, response)) {
+    if (!isValidTeaRequest(request, response)) {
         return
     }
 
@@ -89,55 +75,33 @@ app.post('/teatime/tea/add', (request, response) => {
         description: request.body.description,
         imageLink: request.body.imageLink
     };
-    db.push(tea);
-    return sendSuccessWithResponse(response, tea, 'tea added successfully');
+    teaStorage.push(tea);
+    return statusResponse.successWithResponse(response, tea, 'tea added successfully');
 });
-
-function sendSuccessWithResponse(response, teas, message) {
-    return response.status(200).send({
-        success: 'true',
-        message: message,
-        teas,
-    });
-}
 
 app.get('/teatime/tea/get/:id', (request, response) => {
-    db.map((teas) => {
+    teaStorage.map((teas) => {
         if (teas.id === request.params.id) {
-            return sendSuccessWithResponse(response, teas, 'tea retried successfully');
+            return statusResponse.successWithResponse(response, teas, 'tea retrieved successfully');
         }
     });
-    return sendNotFound(response, 'tea')
+    return statusResponse.notFound(response, 'tea')
 });
-
-function sendSuccessWithoutResponse(response, message) {
-    return response.status(200).send({
-        success: 'true',
-        message: message,
-    });
-}
 
 app.delete('/teatime/tea/delete/:id', (request, response) => {
-    db.map((tea, index) => {
+    teaStorage.map((tea, index) => {
         if (tea.id === request.params.id) {
-            db.splice(index, 1);
-            return sendSuccessWithoutResponse(response, 'tea deleted successfully');
+            teaStorage.splice(index, 1);
+            return statusResponse.successWithoutResponse(response, 'tea deleted successfully');
         }
     });
-    return sendNotFound(response, 'tea')
+    return statusResponse.notFound(response, 'tea')
 });
-
-function sendNotFound(response, name) {
-    return response.status(404).send({
-        success: 'false',
-        message: name + ' not found',
-    });
-}
 
 app.put('/teatime/tea/update/:id', (request, response) => {
     let teaFound;
     let itemIndex;
-    db.map((tea, index) => {
+    teaStorage.map((tea, index) => {
         if (tea.id === request.params.id) {
             teaFound = tea;
             itemIndex = index;
@@ -145,10 +109,10 @@ app.put('/teatime/tea/update/:id', (request, response) => {
     });
 
     if (!teaFound) {
-        return sendNotFound(response, 'tea');
+        return statusResponse.notFound(response, 'tea');
     }
 
-    if (!isValidRequest(request, response)) {
+    if (!isValidTeaRequest(request, response)) {
         return
     }
 
@@ -162,9 +126,9 @@ app.put('/teatime/tea/update/:id', (request, response) => {
         imageLink: request.body.imageLink || teaFound.imageLink
     };
 
-    db.splice(itemIndex, 1, updatedTodo);
+    teaStorage.splice(itemIndex, 1, updatedTodo);
 
-    return sendSuccessWithResponse(response, updatedTodo, 'tea updated successfully')
+    return statusResponse.successWithResponse(response, updatedTodo, 'tea updated successfully')
 });
 
 
