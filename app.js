@@ -5,31 +5,31 @@ import bodyParser from 'body-parser';
 const uuidv1 = require('uuid/v1');
 const app = express();
 const URL = require("url").URL;
-const statusResponse = require('./response/response');
+const httpResponse = require('./response/response');
 
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({extended: false}));
 
 
 app.get('/teatime/tea/all', (request, response) => {
-    return statusResponse.successWithResponse(response, teaStorage, 'teas retrieved successfully');
+    return httpResponse.successWithResponse(response, teaStorage, 'teas retrieved successfully');
 });
 
 function teaCheckAreRequiredParamsValid(reqBody, response) {
     if (!reqBody.name) {
-        statusResponse.badRequestOnMissingParam(response, 'name');
+        httpResponse.badRequestOnMissingParam(response, 'name');
         return false;
     } else if (!reqBody.description) {
-        statusResponse.badRequestOnMissingParam(response, 'description');
+        httpResponse.badRequestOnMissingParam(response, 'description');
         return false;
     } else if (!reqBody.originCountry) {
-        statusResponse.badRequestOnMissingParam(response, 'originCountry');
+        httpResponse.badRequestOnMissingParam(response, 'originCountry');
         return false;
     } else if (!reqBody.harvestSeason) {
-        statusResponse.badRequestOnMissingParam(response, 'harvestSeason');
+        httpResponse.badRequestOnMissingParam(response, 'harvestSeason');
         return false;
     } else if (!reqBody.caffeineContent) {
-        statusResponse.badRequestOnMissingParam(response, 'caffeineContent');
+        httpResponse.badRequestOnMissingParam(response, 'caffeineContent');
         return false;
     }
     return true;
@@ -48,7 +48,7 @@ const stringIsAValidUrl = (s) => {
 
 function checkIsLinkOk(imageLink, response) {
     if (imageLink && !stringIsAValidUrl(imageLink)) {
-        statusResponse.badRequestOnInvalidUrl(response, imageLink);
+        httpResponse.badRequestOnInvalidUrl(response, imageLink);
         return false;
     }
     return true;
@@ -75,26 +75,26 @@ app.post('/teatime/tea/add', (request, response) => {
         imageLink: request.body.imageLink
     };
     teaStorage.push(tea);
-    return statusResponse.successWithResponse(response, tea, 'tea added successfully');
+    return httpResponse.successWithResponse(response, tea, 'tea added successfully');
 });
 
 app.get('/teatime/tea/get/:id', (request, response) => {
     teaStorage.map((teas) => {
         if (teas.id === request.params.id) {
-            return statusResponse.successWithResponse(response, teas, 'tea retrieved successfully');
+            return httpResponse.successWithResponse(response, teas, 'tea retrieved successfully');
         }
     });
-    return statusResponse.notFound(response, 'tea')
+    return httpResponse.notFound(response, 'tea')
 });
 
 app.delete('/teatime/tea/delete/:id', (request, response) => {
     teaStorage.map((tea, index) => {
         if (tea.id === request.params.id) {
             teaStorage.splice(index, 1);
-            return statusResponse.successWithoutResponse(response, 'tea deleted successfully');
+            return httpResponse.successWithoutResponse(response, 'tea deleted successfully');
         }
     });
-    return statusResponse.notFound(response, 'tea')
+    return httpResponse.notFound(response, 'tea')
 });
 
 app.put('/teatime/tea/update/:id', (request, response) => {
@@ -108,7 +108,7 @@ app.put('/teatime/tea/update/:id', (request, response) => {
     });
 
     if (!teaFound) {
-        return statusResponse.notFound(response, 'tea');
+        return httpResponse.notFound(response, 'tea');
     }
 
     if (!isValidTeaRequest(request, response)) {
@@ -127,7 +127,7 @@ app.put('/teatime/tea/update/:id', (request, response) => {
 
     teaStorage.splice(itemIndex, 1, updatedTodo);
 
-    return statusResponse.successWithResponse(response, updatedTodo, 'tea updated successfully')
+    return httpResponse.successWithResponse(response, updatedTodo, 'tea updated successfully')
 });
 
 
