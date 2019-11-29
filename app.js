@@ -36,7 +36,6 @@ function teaCheckAreRequiredParamsValid(reqBody, response) {
 }
 
 //----tea controllers ----
-
 const stringIsAValidUrl = (s) => {
     try {
         new URL(s);
@@ -129,9 +128,8 @@ app.put('/teatime/tea/update/:id', (request, response) => {
 
     return httpResponse.successWithResponse(response, updatedTea, 'tea updated successfully')
 });
-
-
 //----/tea controllers ----
+
 const PORT = 5000;
 
 app.listen(PORT, () => {
