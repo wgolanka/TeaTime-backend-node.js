@@ -21,6 +21,13 @@ module.exports = {
         });
     },
 
+    badRequestOnInvalidParamType: function (response, paramName, type) {
+        return response.status(400).send({
+            success: 'false',
+            message: paramName + ' should be a ' + type
+        });
+    },
+
     badRequestOnInvalidUrl: function (response, link) {
         return response.status(400).send({
             success: 'false',
