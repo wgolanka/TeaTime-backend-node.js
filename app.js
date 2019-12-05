@@ -47,9 +47,9 @@ function isValidTeaRequest(request, response) {
 }
 
 app.get('/teatime/tea/get/:id', (request, response) => {
-    teaStorage.map((teas) => {
-        if (teas.id === request.params.id) {
-            return httpResponse.successWithResponse(response, teas, 'tea retrieved successfully');
+    teaStorage.map((tea) => {
+        if (tea.id === request.params.id) {
+            return httpResponse.successWithResponse(response, tea, 'tea retrieved successfully');
         }
     });
     return httpResponse.notFound(response, 'tea')
