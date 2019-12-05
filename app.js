@@ -18,30 +18,33 @@ app.get('/teatime/tea/all', (request, response) => {
 
 //----tea controllers ----
 
-function isValidTeaRequest(request, response) {
-    return !isAnyRequiredFieldMissing(request.body, response) &&
-        !isAnyFieldWrongParamType(request.body, response) &&
-        isLinkOk(request.body.imageLink, response);
-}
-
 app.post('/teatime/tea/add', (request, response) => {
 
     if (!isValidTeaRequest(request, response)) {
         return
     }
 
+    const {name, originCountry, harvestSeason, caffeineContent, description, imageLink} = request.body;
+
     const tea = {
         id: uuidv1(),
-        name: request.body.name,
-        originCountry: request.body.originCountry,
-        harvestSeason: request.body.harvestSeason,
-        caffeineContent: request.body.caffeineContent,
-        description: request.body.description,
-        imageLink: request.body.imageLink
+        name,
+        originCountry,
+        harvestSeason,
+        caffeineContent,
+        description,
+        imageLink
     };
+
     teaStorage.push(tea);
     return httpResponse.successWithResponse(response, tea, 'tea added successfully');
 });
+
+function isValidTeaRequest(request, response) {
+    return !isAnyRequiredFieldMissing(request.body, response) &&
+        !isAnyFieldWrongParamType(request.body, response) &&
+        isLinkOk(request.body.imageLink, response);
+}
 
 app.get('/teatime/tea/get/:id', (request, response) => {
     teaStorage.map((teas) => {
@@ -80,14 +83,17 @@ app.put('/teatime/tea/update/:id', (request, response) => {
         return
     }
 
+    const {name, originCountry, harvestSeason, caffeineContent, description, imageLink} = request.body;
+
+    // noinspection JSUnusedAssignment
     const updatedTea = {
         id: teaFound.id,
-        name: request.body.name || teaFound.name,
-        originCountry: request.body.originCountry || teaFound.originCountry,
-        harvestSeason: request.body.harvestSeason || teaFound.harvestSeason,
-        caffeineContent: request.body.caffeineContent || teaFound.caffeineContent,
-        description: request.body.description || teaFound.description,
-        imageLink: request.body.imageLink || teaFound.imageLink
+        name: name || teaFound.name,
+        originCountry: originCountry || teaFound.originCountry,
+        harvestSeason: harvestSeason || teaFound.harvestSeason,
+        caffeineContent: caffeineContent || teaFound.caffeineContent,
+        description: description || teaFound.description,
+        imageLink: imageLink || teaFound.imageLink
     };
 
     teaStorage.splice(itemIndex, 1, updatedTea);
