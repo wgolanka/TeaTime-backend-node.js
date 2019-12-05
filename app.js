@@ -18,10 +18,6 @@ app.get('/teatime/tea/all', (request, response) => {
     return httpResponse.successWithResponse(response, teaStorage, 'teas retrieved successfully');
 });
 
-// TODO walidacja czy typ pola jest taki jak powinien być - oczekujemy wieku - powinien być int, w
-//  wylaczyc przegladarkowa
-
-
 function teaCheckAreRequiredParamsValid(reqBody, response) {
     if (!reqBody.name) {
         httpResponse.badRequestOnMissingParam(response, 'name');
