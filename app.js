@@ -1,7 +1,9 @@
 import express from 'express';
 import teaStorage from './db/teaStorage';
+import usersStorage from './db/usersStorage';
 import bodyParser from 'body-parser';
-import {isAnyFieldWrongParamType, isAnyRequiredFieldMissing, isLinkOk} from "./validation/teaValidation";
+import {isAnyFieldWrongParamTypeTea, isAnyRequiredFieldMissingTea, isLinkOk} from "./validation/teaValidation";
+import {isAnyFieldWrongParamTypeUser, isAnyRequiredFieldMissingUser} from "./validation/userValidation";
 
 const uuidv1 = require('uuid/v1');
 const app = express();
@@ -12,11 +14,12 @@ app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({extended: false}));
 
 
+//----tea controllers ----
+
+
 app.get('/teatime/tea/all', (request, response) => {
     return httpResponse.successWithResponse(response, teaStorage, 'teas retrieved successfully');
 });
-
-//----tea controllers ----
 
 app.post('/teatime/tea/add', (request, response) => {
 
@@ -42,8 +45,8 @@ app.post('/teatime/tea/add', (request, response) => {
 });
 
 function isValidTeaRequest(request, response) {
-    return !isAnyRequiredFieldMissing(request.body, response) &&
-        !isAnyFieldWrongParamType(request.body, response) &&
+    return !isAnyRequiredFieldMissingTea(request.body, response) &&
+        !isAnyFieldWrongParamTypeTea(request.body, response) &&
         isLinkOk(request.body.imageLink, response);
 }
 
@@ -96,6 +99,44 @@ app.put('/teatime/tea/update/:id', (request, response) => {
     return httpResponse.successWithResponse(response, updatedTea, 'tea updated successfully')
 });
 //----/tea controllers ----
+
+
+//----user controllers ----
+
+app.get('/teatime/user/all', (request, response) => {
+    return httpResponse.successWithResponse(response, usersStorage, 'users retrieved successfully');
+});
+
+app.post('/teatime/user/add', (request, response) => {
+
+    if (!isValidAddUserRequest(request, response)) {
+        return
+    }
+
+    const {nick, email, description, imageLink} = request.body;
+
+    const user = {
+        id: uuidv1(),
+        nick,
+        email,
+        accountCreated: Date.now(),
+        description,
+        imageLink
+    };
+
+    usersStorage.push(user);
+
+    return httpResponse.successWithResponse(response, user, 'user added successfully');
+});
+
+function isValidAddUserRequest(request, response) {
+    return !isAnyRequiredFieldMissingUser(request.body, response) &&
+        !isAnyFieldWrongParamTypeUser(request.body, response) &&
+        isLinkOk(request.body.imageLink, response);
+}
+
+
+//----/user controllers ----
 
 const PORT = 5000;
 

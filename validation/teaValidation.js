@@ -10,7 +10,7 @@ const HARVEST_SEASON = 'harvestSeason';
 const CAFFEINE_CONTENT = 'caffeineContent';
 
 module.exports = {
-    isAnyRequiredFieldMissing: function (reqBody, response) {
+    isAnyRequiredFieldMissingTea: function (reqBody, response) {
         if (!reqBody.name) {
             httpResponse.badRequestOnMissingParam(response, NAME);
             return true;
@@ -31,7 +31,7 @@ module.exports = {
         return false;
     },
 
-    isAnyFieldWrongParamType: function (reqBody, response) {
+    isAnyFieldWrongParamTypeTea: function (reqBody, response) {
         if (!isString(reqBody.name)) {
             httpResponse.badRequestOnInvalidParamType(response, NAME, stringType);
             return true;
