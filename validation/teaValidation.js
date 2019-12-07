@@ -1,5 +1,7 @@
 import * as httpResponse from "../response/response";
 
+import usersStorage from '../db/usersStorage.js';
+
 const stringType = "string";
 const numberType = "number";
 
@@ -8,6 +10,7 @@ const DESCRIPTION = 'description';
 const ORIGIN_COUNTRY = 'originCountry';
 const HARVEST_SEASON = 'harvestSeason';
 const CAFFEINE_CONTENT = 'caffeineContent';
+const AUTHOR_ID = 'authorId';
 
 module.exports = {
     isAnyRequiredFieldMissingTea: function (reqBody, response) {
@@ -25,6 +28,9 @@ module.exports = {
             return true;
         } else if (!reqBody.caffeineContent) {
             httpResponse.badRequestOnMissingParam(response, CAFFEINE_CONTENT);
+            return true;
+        } else if (!reqBody.authorId) {
+            httpResponse.badRequestOnMissingParam(response, AUTHOR_ID);
             return true;
         }
 
@@ -47,8 +53,19 @@ module.exports = {
         } else if (!isNumber(reqBody.caffeineContent)) {
             httpResponse.badRequestOnInvalidParamType(response, CAFFEINE_CONTENT, numberType);
             return true;
+        } else if (!isUUID(reqBody.authorId)) {
+            httpResponse.badRequestOnInvalidParamType(response, AUTHOR_ID, 'uuid');
+            return true;
         }
 
+        return false;
+    },
+
+    isAuthorNotFound: function (authorId, response) {
+        if (!usersStorage.find(user => user.id === authorId)) {
+            httpResponse.notFound(response, `User with id: ${authorId} `);
+            return true;
+        }
         return false;
     },
 
@@ -77,4 +94,9 @@ function isNumber(responseValue) {
 
 function isString(responseValue) {
     return typeof responseValue === stringType;
+}
+
+function isUUID(id) {
+    const regExp = new RegExp(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-5][0-9a-f]{3}-[089ab][0-9a-f]{3}-[0-9a-f]{12}$/i);
+    return regExp.test(id)
 }

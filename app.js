@@ -2,7 +2,12 @@ import express from 'express';
 import teaStorage from './db/teaStorage';
 import usersStorage from './db/usersStorage';
 import bodyParser from 'body-parser';
-import {isAnyFieldWrongParamTypeTea, isAnyRequiredFieldMissingTea, isLinkOk} from "./validation/teaValidation";
+import {
+    isAnyFieldWrongParamTypeTea,
+    isAnyRequiredFieldMissingTea,
+    isAuthorNotFound,
+    isLinkOk
+} from "./validation/teaValidation";
 import {isAnyFieldWrongParamTypeUser, isAnyRequiredFieldMissingUser} from "./validation/userValidation";
 
 const uuidv1 = require('uuid/v1');
@@ -27,7 +32,7 @@ app.post('/teatime/tea/add', (request, response) => {
         return
     }
 
-    const {name, originCountry, harvestSeason, caffeineContent, description, imageLink} = request.body;
+    const {name, originCountry, harvestSeason, caffeineContent, description, imageLink, authorId} = request.body;
 
     const tea = {
         id: uuidv1(),
@@ -36,18 +41,27 @@ app.post('/teatime/tea/add', (request, response) => {
         harvestSeason,
         caffeineContent,
         description,
-        imageLink
+        imageLink,
+        authorId
     };
 
     teaStorage.push(tea);
+    addTeaToAuthor(tea.authorId, tea.id);
 
     return httpResponse.successWithResponse(response, tea, 'tea added successfully');
 });
 
 function isValidTeaRequest(request, response) {
-    return !isAnyRequiredFieldMissingTea(request.body, response) &&
+    return !isAuthorNotFound(request.body.authorId, response) &&
+        !isAnyRequiredFieldMissingTea(request.body, response) &&
         !isAnyFieldWrongParamTypeTea(request.body, response) &&
         isLinkOk(request.body.imageLink, response);
+}
+
+function addTeaToAuthor(authorId, teaId) {
+    usersStorage
+        .find(user => user.id === authorId)
+        .teas.push(teaId);
 }
 
 app.get('/teatime/tea/get/:id', (request, response) => {
@@ -60,10 +74,17 @@ app.get('/teatime/tea/get/:id', (request, response) => {
     return httpResponse.notFound(response, 'tea');
 });
 
+function removeTeaFromAuthor(teaId, authorId) {
+    const storedUser = usersStorage.find(user => user.id === authorId);
+    const teaIndex = storedUser.teas.indexOf(teaId);
+    storedUser.teas.splice(teaIndex, 1);
+}
+
 app.delete('/teatime/tea/delete/:id', (request, response) => {
     teaStorage.map((tea, index) => {
         if (tea.id === request.params.id) {
             teaStorage.splice(index, 1);
+            removeTeaFromAuthor(tea.id, tea.authorId);
             return httpResponse.successWithoutResponse(response, 'tea deleted successfully');
         }
     });
@@ -91,7 +112,8 @@ app.put('/teatime/tea/update/:id', (request, response) => {
         harvestSeason: harvestSeason,
         caffeineContent: caffeineContent,
         description: description,
-        imageLink: imageLink || storedTea.imageLink
+        imageLink: imageLink || storedTea.imageLink,
+        authorId: storedTea.authorId
     };
 
     teaStorage.splice(teaStorage.indexOf(storedTea), 1, updatedTea);
@@ -107,9 +129,19 @@ app.get('/teatime/user/all', (request, response) => {
     return httpResponse.successWithResponse(response, usersStorage, 'users retrieved successfully');
 });
 
+app.get('/teatime/user/get/:id', (request, response) => {
+    usersStorage.map((user) => {
+        if (user.id === request.params.id) {
+            return httpResponse.successWithResponse(response, user, 'user retrieved successfully');
+        }
+    });
+
+    return httpResponse.notFound(response, 'tea');
+});
+
 app.post('/teatime/user/add', (request, response) => {
 
-    if (!isValidAddUserRequest(request, response)) {
+    if (!isValidUserRequest(request, response)) {
         return
     }
 
@@ -121,7 +153,8 @@ app.post('/teatime/user/add', (request, response) => {
         email,
         accountCreated: Date.now(),
         description,
-        imageLink
+        imageLink,
+        teas: []
     };
 
     usersStorage.push(user);
@@ -129,12 +162,58 @@ app.post('/teatime/user/add', (request, response) => {
     return httpResponse.successWithResponse(response, user, 'user added successfully');
 });
 
-function isValidAddUserRequest(request, response) {
+function isValidUserRequest(request, response) {
     return !isAnyRequiredFieldMissingUser(request.body, response) &&
         !isAnyFieldWrongParamTypeUser(request.body, response) &&
         isLinkOk(request.body.imageLink, response);
 }
 
+app.put('/teatime/user/update/:id', (request, response) => {
+    const storedUser = usersStorage.find(user => user.id === request.params.id);
+
+    if (!storedUser) {
+        return httpResponse.notFound(response, 'user');
+    }
+
+    if (!isValidUserRequest(request, response)) {
+        return
+    }
+
+    const {nick, email, description, imageLink} = request.body;
+
+    const updatedUser = {
+        id: storedUser.id,
+        nick: nick,
+        email: email,
+        description: description,
+        imageLink: imageLink || storedUser.imageLink,
+        teas: storedUser.teas
+    };
+
+    usersStorage.splice(usersStorage.indexOf(storedUser), 1, updatedUser);
+
+    return httpResponse.successWithResponse(response, updatedUser, 'user updated successfully')
+});
+
+function removeAllAuthorTeas(authorId) {
+    for (let i = teaStorage.length - 1; i >= 0; i--) {
+        if (teaStorage[i].authorId === authorId) {
+            teaStorage.splice(i, 1);
+        }
+    }
+}
+
+app.delete('/teatime/user/delete/:id', (request, response) => {
+    usersStorage.map((user, index) => {
+        if (user.id === request.params.id) {
+            usersStorage.splice(index, 1);
+            removeAllAuthorTeas(user.id);
+            return httpResponse.successWithoutResponse(response, 'user deleted successfully');
+        }
+    });
+
+    return httpResponse.notFound(response, 'user');
+});
 
 //----/user controllers ----
 

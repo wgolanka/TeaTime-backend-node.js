@@ -5,7 +5,8 @@ const users = [
         email: "princess@carolyn.com",
         accountCreated: Date.now(),
         description: "Aw, Fish!",
-        imageLink: "https://vignette.wikia.nocookie.net/bojack-horseman/images/7/79/PC.jpg/revision/latest?cb=20170402115004&path-prefix=pl"
+        imageLink: "https://vignette.wikia.nocookie.net/bojack-horseman/images/7/79/PC.jpg/revision/latest?cb=20170402115004&path-prefix=pl",
+        teas: ["41dd5fd1-e7f4-42a4-95a4-948cc33008ed", "90f74b1e-0fc1-467d-a6dd-5d863d3c717d"]
     },
     {
         id: "e22d96fe-af0e-4f1b-91ff-03f579561ccd",
@@ -13,7 +14,8 @@ const users = [
         email: "BoJack@90s.com",
         accountCreated: Date.now(),
         description: "Back in the 90s I was in a very famous tv show",
-        imageLink: "https://vignette.wikia.nocookie.net/bojack-horseman/images/9/99/Slider3.jpg/revision/latest/scale-to-width-down/620?cb=20170326111603&path-prefix=pl"
+        imageLink: "https://vignette.wikia.nocookie.net/bojack-horseman/images/9/99/Slider3.jpg/revision/latest/scale-to-width-down/620?cb=20170326111603&path-prefix=pl",
+        teas: []
     },
 ];
 
