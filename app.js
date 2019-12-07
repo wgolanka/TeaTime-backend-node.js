@@ -37,6 +37,7 @@ app.post('/teatime/tea/add', (request, response) => {
     };
 
     teaStorage.push(tea);
+
     return httpResponse.successWithResponse(response, tea, 'tea added successfully');
 });
 
@@ -52,7 +53,8 @@ app.get('/teatime/tea/get/:id', (request, response) => {
             return httpResponse.successWithResponse(response, tea, 'tea retrieved successfully');
         }
     });
-    return httpResponse.notFound(response, 'tea')
+
+    return httpResponse.notFound(response, 'tea');
 });
 
 app.delete('/teatime/tea/delete/:id', (request, response) => {
@@ -62,20 +64,14 @@ app.delete('/teatime/tea/delete/:id', (request, response) => {
             return httpResponse.successWithoutResponse(response, 'tea deleted successfully');
         }
     });
-    return httpResponse.notFound(response, 'tea')
+
+    return httpResponse.notFound(response, 'tea');
 });
 
 app.put('/teatime/tea/update/:id', (request, response) => {
-    let teaFound;
-    let itemIndex;
-    teaStorage.map((tea, index) => {
-        if (tea.id === request.params.id) {
-            teaFound = tea;
-            itemIndex = index;
-        }
-    });
+    const storedTea = teaStorage.find(tea => tea.id === request.params.id);
 
-    if (!teaFound) {
+    if (!storedTea) {
         return httpResponse.notFound(response, 'tea');
     }
 
@@ -85,18 +81,17 @@ app.put('/teatime/tea/update/:id', (request, response) => {
 
     const {name, originCountry, harvestSeason, caffeineContent, description, imageLink} = request.body;
 
-    // noinspection JSUnusedAssignment
     const updatedTea = {
-        id: teaFound.id,
-        name: name || teaFound.name,
-        originCountry: originCountry || teaFound.originCountry,
-        harvestSeason: harvestSeason || teaFound.harvestSeason,
-        caffeineContent: caffeineContent || teaFound.caffeineContent,
-        description: description || teaFound.description,
-        imageLink: imageLink || teaFound.imageLink
+        id: storedTea.id,
+        name: name,
+        originCountry: originCountry,
+        harvestSeason: harvestSeason,
+        caffeineContent: caffeineContent,
+        description: description,
+        imageLink: imageLink || storedTea.imageLink
     };
 
-    teaStorage.splice(itemIndex, 1, updatedTea);
+    teaStorage.splice(teaStorage.indexOf(storedTea), 1, updatedTea);
 
     return httpResponse.successWithResponse(response, updatedTea, 'tea updated successfully')
 });
