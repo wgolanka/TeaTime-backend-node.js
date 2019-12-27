@@ -69,7 +69,7 @@ module.exports = {
         return false;
     },
 
-    isLinkOk: function (imageLink, response) {
+    isLinkOk: function (imageLink, response) { //TODO extract to separate validation class
         if (imageLink && !isString(imageLink) && !stringIsAValidUrl(imageLink)) {
             httpResponse.badRequestOnInvalidUrl(response, imageLink);
             return false;

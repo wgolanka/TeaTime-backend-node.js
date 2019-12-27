@@ -38,6 +38,13 @@ module.exports = {
         });
     },
 
+    badRequest: function (response, message) {
+        return response.status(400).send({
+            success: FALSE,
+            message: message
+        });
+    },
+
     notFound: function (response, name) {
         return response.status(404).send({
             success: FALSE,

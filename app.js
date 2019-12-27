@@ -9,6 +9,12 @@ import {
     isLinkOk
 } from "./validation/teaValidation";
 import {isAnyFieldWrongParamTypeUser, isAnyRequiredFieldMissingUser} from "./validation/userValidation";
+import accessoriesStorage from "./db/accessoriesStorage";
+import {
+    isAnyFieldWrongParamTypeAccessory,
+    isAnyRequiredFieldMissingAccessory,
+    isBadPriceRange
+} from "./validation/accessoryValidation";
 
 const uuidv1 = require('uuid/v1');
 const app = express();
@@ -46,7 +52,7 @@ app.post('/teatime/tea/add', (request, response) => {
     };
 
     teaStorage.push(tea);
-    addTeaToAuthor(tea.authorId, tea.id);
+    addTeaToAuthor(tea.id, tea.authorId);
 
     return httpResponse.successWithResponse(response, tea, 'tea added successfully');
 });
@@ -58,42 +64,56 @@ function isValidTeaRequest(request, response) {
         isLinkOk(request.body.imageLink, response);
 }
 
-function addTeaToAuthor(authorId, teaId) {
+function addTeaToAuthor(teaId, authorId) {
     usersStorage
         .find(user => user.id === authorId)
         .teas.push(teaId);
 }
 
-app.get('/teatime/tea/get/:id', (request, response) => {
-    teaStorage.map((tea) => {
-        if (tea.id === request.params.id) {
-            return httpResponse.successWithResponse(response, tea, 'tea retrieved successfully');
-        }
-    });
+function findTea(id) {
+    return teaStorage.find(tea => tea.id === id);
+}
 
-    return httpResponse.notFound(response, 'tea');
+app.get('/teatime/tea/get/:id', (request, response) => {
+    const storedTea = findTea(request.params.id);
+
+    if (!storedTea) {
+        return httpResponse.notFound(response, 'tea');
+    }
+
+    return httpResponse.successWithResponse(response, tea, 'tea retrieved successfully');
 });
 
+function findUser(id) {
+    return usersStorage.find(user => user.id === id);
+}
+
 function removeTeaFromAuthor(teaId, authorId) {
-    const storedUser = usersStorage.find(user => user.id === authorId);
+    const storedUser = findUser(authorId);
     const teaIndex = storedUser.teas.indexOf(teaId);
     storedUser.teas.splice(teaIndex, 1);
 }
 
 app.delete('/teatime/tea/delete/:id', (request, response) => {
-    teaStorage.map((tea, index) => {
-        if (tea.id === request.params.id) {
-            teaStorage.splice(index, 1);
-            removeTeaFromAuthor(tea.id, tea.authorId);
-            return httpResponse.successWithoutResponse(response, 'tea deleted successfully');
-        }
-    });
+    const storedTea = findTea(request.params.id);
 
-    return httpResponse.notFound(response, 'tea');
+    if (!storedTea) {
+        return httpResponse.notFound(response, 'tea');
+    }
+
+    deleteTea(storedTea);
+
+    return httpResponse.successWithoutResponse(response, 'tea deleted successfully');
 });
 
+function deleteTea(storedTea) {
+    const index = teaStorage.indexOf(storedTea);
+    teaStorage.splice(index, 1);
+    removeTeaFromAuthor(storedTea.id, storedTea.authorId);
+}
+
 app.put('/teatime/tea/update/:id', (request, response) => {
-    const storedTea = teaStorage.find(tea => tea.id === request.params.id);
+    const storedTea = findTea(request.params.id);
 
     if (!storedTea) {
         return httpResponse.notFound(response, 'tea');
@@ -130,13 +150,13 @@ app.get('/teatime/user/all', (request, response) => {
 });
 
 app.get('/teatime/user/get/:id', (request, response) => {
-    usersStorage.map((user) => {
-        if (user.id === request.params.id) {
-            return httpResponse.successWithResponse(response, user, 'user retrieved successfully');
-        }
-    });
+    const storedUser = findUser(request.params.id);
 
-    return httpResponse.notFound(response, 'tea');
+    if (!storedUser) {
+        return httpResponse.notFound(response, 'user');
+    }
+
+    return httpResponse.successWithResponse(response, storedUser, 'user retrieved successfully');
 });
 
 app.post('/teatime/user/add', (request, response) => {
@@ -169,7 +189,7 @@ function isValidUserRequest(request, response) {
 }
 
 app.put('/teatime/user/update/:id', (request, response) => {
-    const storedUser = usersStorage.find(user => user.id === request.params.id);
+    const storedUser = findUser(request.params.id);
 
     if (!storedUser) {
         return httpResponse.notFound(response, 'user');
@@ -195,6 +215,20 @@ app.put('/teatime/user/update/:id', (request, response) => {
     return httpResponse.successWithResponse(response, updatedUser, 'user updated successfully')
 });
 
+app.delete('/teatime/user/delete/:id', (request, response) => {
+    const storedUser = findUser(request.params.id);
+
+    if (!storedUser) {
+        return httpResponse.notFound(response, 'user');
+    }
+
+    const index = usersStorage.indexOf(storedUser);
+    usersStorage.splice(index, 1);
+    removeAllAuthorTeas(storedUser.id);
+
+    return httpResponse.successWithoutResponse(response, 'user deleted successfully');
+});
+
 function removeAllAuthorTeas(authorId) {
     for (let i = teaStorage.length - 1; i >= 0; i--) {
         if (teaStorage[i].authorId === authorId) {
@@ -203,19 +237,61 @@ function removeAllAuthorTeas(authorId) {
     }
 }
 
-app.delete('/teatime/user/delete/:id', (request, response) => {
-    usersStorage.map((user, index) => {
-        if (user.id === request.params.id) {
-            usersStorage.splice(index, 1);
-            removeAllAuthorTeas(user.id);
-            return httpResponse.successWithoutResponse(response, 'user deleted successfully');
-        }
-    });
+//----/user controllers ----
 
-    return httpResponse.notFound(response, 'user');
+
+//----accessory controllers ----
+
+app.get('/teatime/accessory/all', (request, response) => {
+    return httpResponse.successWithResponse(response, accessoriesStorage, 'accessories retrieved successfully');
 });
 
-//----/user controllers ----
+app.get('/teatime/accessory/:id', (request, response) => {
+    const accessory = findAccessory(request.params.id);
+
+    if (!accessory) {
+        return httpResponse.notFound(response, 'accessory');
+    }
+
+    return httpResponse.successWithResponse(response, accessory, 'Accessory retrieved successfully');
+});
+
+function findAccessory(id) {
+    return accessoriesStorage.find(accessory => accessory.id === id);
+}
+
+app.post('/teatime/accessory/add', (request, response) => {
+
+    if (!isValidAccessoryRequest(request, response)) {
+        return
+    }
+
+    const {name, isNecessary, description, priceFrom, priceTo, imageLink} = request.body;
+
+    const accessory = {
+        id: uuidv1(),
+        name,
+        isNecessary,
+        description,
+        accountCreated: Date.now(),
+        priceFrom,
+        priceTo,
+        imageLink
+    };
+
+    accessoriesStorage.push(accessory);
+
+    return httpResponse.successWithResponse(response, accessory, 'accessory added successfully');
+});
+
+function isValidAccessoryRequest(request, response) {
+    return !isAnyRequiredFieldMissingAccessory(request.body, response) &&
+        !isAnyFieldWrongParamTypeAccessory(request.body, response) &&
+        isLinkOk(request.body.imageLink, response) &&
+        !isBadPriceRange(response, request.body.priceFrom, request.body.priceTo);
+}
+
+//----/accessory controllers ----
 
 const PORT = 5000;
 
