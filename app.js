@@ -48,7 +48,8 @@ app.post('/teatime/tea/add', (request, response) => {
         caffeineContent,
         description,
         imageLink,
-        authorId
+        authorId,
+        accessories: []
     };
 
     teaStorage.push(tea);
@@ -110,6 +111,17 @@ function deleteTea(storedTea) {
     const index = teaStorage.indexOf(storedTea);
     teaStorage.splice(index, 1);
     removeTeaFromAuthor(storedTea.id, storedTea.authorId);
+    removeTeaFromAccessories(storedTea.id)
+}
+
+function removeTeaFromAccessories(teaId) {
+    let index;
+    for (let i = accessoriesStorage.length - 1; i >= 0; i--) {
+        if (accessoriesStorage[i].teas.includes(teaId)) {
+            index = accessoriesStorage[i].teas.indexOf(teaId);
+            accessoriesStorage[i].teas.splice(index, 1)
+        }
+    }
 }
 
 app.put('/teatime/tea/update/:id', (request, response) => {
@@ -123,7 +135,7 @@ app.put('/teatime/tea/update/:id', (request, response) => {
         return
     }
 
-    const {name, originCountry, harvestSeason, caffeineContent, description, imageLink} = request.body;
+    const {name, originCountry, harvestSeason, caffeineContent, description, imageLink, accessories} = request.body;
 
     const updatedTea = {
         id: storedTea.id,
@@ -133,13 +145,31 @@ app.put('/teatime/tea/update/:id', (request, response) => {
         caffeineContent: caffeineContent,
         description: description,
         imageLink: imageLink || storedTea.imageLink,
-        authorId: storedTea.authorId
+        authorId: storedTea.authorId,
+        accessories: accessories
     };
+
+    if (storedTea.accessories !== accessories) {
+        updateAccessories(updatedTea, accessories)
+    }
 
     teaStorage.splice(teaStorage.indexOf(storedTea), 1, updatedTea);
 
     return httpResponse.successWithResponse(response, updatedTea, 'tea updated successfully')
 });
+
+function updateAccessories(updatedTea, accessories) {
+    accessoriesStorage.forEach(accessory => {
+        if (!accessories.includes(accessory.id)) {
+            return;
+        }
+
+        if (!accessory.teas.includes(updatedTea.id)) {
+            accessory.teas.push(updatedTea.id)
+        }
+    });
+}
+
 //----/tea controllers ----
 
 
@@ -226,6 +256,7 @@ app.delete('/teatime/user/delete/:id', (request, response) => {
     usersStorage.splice(index, 1);
     removeAllAuthorTeas(storedUser.id);
 
+
     return httpResponse.successWithoutResponse(response, 'user deleted successfully');
 });
 
@@ -236,7 +267,6 @@ function removeAllAuthorTeas(authorId) {
         }
     }
 }
-
 //----/user controllers ----
 
 
@@ -276,7 +306,8 @@ app.post('/teatime/accessory/add', (request, response) => {
         accountCreated: Date.now(),
         priceFrom,
         priceTo,
-        imageLink
+        imageLink,
+        teas: []
     };
 
     accessoriesStorage.push(accessory);
@@ -289,6 +320,76 @@ function isValidAccessoryRequest(request, response) {
         !isAnyFieldWrongParamTypeAccessory(request.body, response) &&
         isLinkOk(request.body.imageLink, response) &&
         !isBadPriceRange(response, request.body.priceFrom, request.body.priceTo);
+}
+
+app.put('/teatime/accessory/update/:id', (request, response) => {
+    const storedAccessory = findAccessory(request.params.id);
+
+    if (!storedAccessory) {
+        return httpResponse.notFound(response, 'accessory');
+    }
+
+    if (!isValidAccessoryRequest(request, response)) {
+        return
+    }
+
+    const {name, isNecessary, description, priceFrom, priceTo, imageLink, teas} = request.body;
+
+    const updatedAccessory = {
+        id: storedAccessory.id,
+        name: name,
+        isNecessary: isNecessary,
+        description: description,
+        accountCreated: storedAccessory.accountCreated,
+        priceFrom: priceFrom,
+        priceTo: priceTo,
+        imageLink: imageLink,
+        teas: teas
+    };
+
+    if (storedAccessory.teas !== teas) {
+        updateTeas(updatedAccessory, teas)
+    }
+
+    accessoriesStorage.splice(accessoriesStorage.indexOf(storedAccessory), 1, updatedAccessory);
+
+    return httpResponse.successWithResponse(response, updatedAccessory, 'Accessory updated successfully')
+});
+
+function updateTeas(updatedAccessory, teas) {
+    teaStorage.forEach(tea => {
+        if (!teas.includes(tea.id)) {
+            return;
+        }
+
+        if (!tea.accessories.includes(updatedAccessory.id)) {
+            tea.accessories.push(updatedAccessory.id)
+        }
+    });
+}
+
+app.delete('/teatime/accessory/delete/:id', (request, response) => {
+    const storedAccessory = findAccessory(request.params.id);
+
+    if (!storedAccessory) {
+        return httpResponse.notFound(response, 'accessory');
+    }
+
+    const index = accessoriesStorage.indexOf(storedAccessory);
+    accessoriesStorage.splice(index, 1);
+    removeAccessoryFromAllTeas(storedAccessory.id);
+
+    return httpResponse.successWithoutResponse(response, 'Accessory deleted successfully');
+});
+
+function removeAccessoryFromAllTeas(accessoryId) {
+    let index;
+    for (let i = teaStorage.length - 1; i >= 0; i--) {
+        if (teaStorage[i].accessories.includes(accessoryId)) {
+            index = teaStorage[i].accessories.indexOf(accessoryId);
+            teaStorage[i].accessories.splice(index, 1)
+        }
+    }
 }
 
 //----/accessory controllers ----
