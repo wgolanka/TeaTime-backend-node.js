@@ -179,6 +179,16 @@ function updateAccessories(updatedTea, accessories) {
     });
 }
 
+app.get('/teatime/tea/details', (request, response) => {
+    const numOfTeas = teaStorage.length;
+    const details = {
+        numberOfTeas: numOfTeas,
+        lastTeaCreatedId: teaStorage[numOfTeas - 1].id
+    };
+
+    return httpResponse.successWithResponse(response, details, 'Teas details');
+});
+
 //----/tea controllers ----
 
 
@@ -277,6 +287,16 @@ function removeAllAuthorTeas(authorId) {
     }
 }
 
+app.get('/teatime/user/details', (request, response) => {
+    const numOfUsers = usersStorage.length;
+    const details = {
+        numberOfUsers: numOfUsers,
+        lastAccountCreatedDate: Date(usersStorage[numOfUsers - 1].accountCreated)
+    };
+
+    return httpResponse.successWithResponse(response, details, 'Users details');
+});
+
 //----/user controllers ----
 
 
@@ -313,7 +333,7 @@ app.post('/teatime/accessory/add', (request, response) => {
         name,
         isNecessary,
         description,
-        accountCreated: Date.now(),
+        created: Date.now(),
         priceFrom,
         priceTo,
         imageLink,
@@ -350,7 +370,7 @@ app.put('/teatime/accessory/update/:id', (request, response) => {
         name: name,
         isNecessary: isNecessary,
         description: description,
-        accountCreated: storedAccessory.accountCreated,
+        created: storedAccessory.created,
         priceFrom: priceFrom,
         priceTo: priceTo,
         imageLink: imageLink,
@@ -401,6 +421,16 @@ function removeAccessoryFromAllTeas(accessoryId) {
         }
     }
 }
+
+app.get('/teatime/accessories/details', (request, response) => {
+    const numOfAccessories = accessoriesStorage.length;
+    const details = {
+        numberOfAccessories: numOfAccessories,
+        lastAccessoryCreatedAt: Date(accessoriesStorage[numOfAccessories - 1].created)
+    };
+
+    return httpResponse.successWithResponse(response, details, 'Accessories details');
+});
 
 //----/accessory controllers ----
 
