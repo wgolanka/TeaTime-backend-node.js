@@ -1,6 +1,7 @@
 import * as httpResponse from "../response/response";
 
 import usersStorage from '../db/usersStorage.js';
+import * as validation from "./allValidation";
 
 const stringType = "string";
 const numberType = "number";
@@ -37,6 +38,26 @@ module.exports = {
         return false;
     },
 
+    isAnyRequiredFieldMissingTeaConfig: function (reqBody, response) {
+        const config = reqBody.body.configuration;
+        console.log(config.isDifficult);
+        if (!config.brewTimeMin) {
+            httpResponse.badRequestOnMissingParam(response, "brewTimeMin");
+            return true;
+        } else if (!config.brewTimeSec) {
+            httpResponse.badRequestOnMissingParam(response, "brewTimeSec");
+            return true;
+        } else if (!config.ingredients) {
+            httpResponse.badRequestOnMissingParam(response, "ingredients");
+            return true;
+        } else if (!config.timeToDrink) {
+            httpResponse.badRequestOnMissingParam(response, "timeToDrink");
+            return true;
+        }
+
+        return false;
+    },
+
     isAnyFieldWrongParamTypeTea: function (reqBody, response) {
         if (!isString(reqBody.name)) {
             httpResponse.badRequestOnInvalidParamType(response, NAME, stringType);
@@ -55,6 +76,28 @@ module.exports = {
             return true;
         } else if (!isUUID(reqBody.authorId)) {
             httpResponse.badRequestOnInvalidParamType(response, AUTHOR_ID, 'uuid');
+            return true;
+        }
+
+        return false;
+    },
+
+    isAnyFieldWrongParamTypeTeaConfig: function (reqBody, response) {
+        const config = reqBody.body.configuration;
+        if (!isNumber(config.brewTimeMin)) {
+            httpResponse.badRequestOnInvalidParamType(response, "brewTimeMin", numberType);
+            return true;
+        } else if (!isNumber(config.brewTimeSec)) {
+            httpResponse.badRequestOnInvalidParamType(response, "brewTimeSec", numberType);
+            return true;
+        } else if (!Array.isArray(config.ingredients)) {
+            httpResponse.badRequestOnInvalidParamType(response, "ingredients", "array");
+            return true;
+        } else if (!Array.isArray(config.timeToDrink)) {
+            httpResponse.badRequestOnInvalidParamType(response, "timeToDrink", "array");
+            return true;
+        } else if (!validation.isBoolean(config.isDifficult)) {
+            httpResponse.badRequestOnInvalidParamType(response, "isDifficult", "boolean");
             return true;
         }
 

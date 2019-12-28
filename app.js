@@ -4,7 +4,9 @@ import usersStorage from './db/usersStorage';
 import bodyParser from 'body-parser';
 import {
     isAnyFieldWrongParamTypeTea,
+    isAnyFieldWrongParamTypeTeaConfig,
     isAnyRequiredFieldMissingTea,
+    isAnyRequiredFieldMissingTeaConfig,
     isAuthorNotFound,
     isLinkOk
 } from "./validation/teaValidation";
@@ -49,7 +51,8 @@ app.post('/teatime/tea/add', (request, response) => {
         description,
         imageLink,
         authorId,
-        accessories: []
+        accessories: [],
+        configuration: {}
     };
 
     teaStorage.push(tea);
@@ -131,11 +134,11 @@ app.put('/teatime/tea/update/:id', (request, response) => {
         return httpResponse.notFound(response, 'tea');
     }
 
-    if (!isValidTeaRequest(request, response)) {
+    if (!isValidTeaRequest(request, response) || !isValidTeaConfig(request, response)) {
         return
     }
 
-    const {name, originCountry, harvestSeason, caffeineContent, description, imageLink, accessories} = request.body;
+    const {name, originCountry, harvestSeason, caffeineContent, description, imageLink, accessories, configuration} = request.body;
 
     const updatedTea = {
         id: storedTea.id,
@@ -146,7 +149,8 @@ app.put('/teatime/tea/update/:id', (request, response) => {
         description: description,
         imageLink: imageLink || storedTea.imageLink,
         authorId: storedTea.authorId,
-        accessories: accessories
+        accessories: accessories,
+        configuration: configuration
     };
 
     if (storedTea.accessories !== accessories) {
@@ -157,6 +161,11 @@ app.put('/teatime/tea/update/:id', (request, response) => {
 
     return httpResponse.successWithResponse(response, updatedTea, 'tea updated successfully')
 });
+
+function isValidTeaConfig(request, response) {
+    return !isAnyRequiredFieldMissingTeaConfig(request, response) ||
+        !isAnyFieldWrongParamTypeTeaConfig(request, response);
+}
 
 function updateAccessories(updatedTea, accessories) {
     accessoriesStorage.forEach(accessory => {
@@ -267,6 +276,7 @@ function removeAllAuthorTeas(authorId) {
         }
     }
 }
+
 //----/user controllers ----
 
 

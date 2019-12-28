@@ -17,9 +17,6 @@ module.exports = {
         if (!reqBody.name) {
             httpResponse.badRequestOnMissingParam(response, NAME);
             return true;
-        } else if (!reqBody.isNecessary) {
-            httpResponse.badRequestOnMissingParam(response, IS_NECESSARY);
-            return true;
         } else if (!reqBody.description) {
             httpResponse.badRequestOnMissingParam(response, DESCRIPTION);
             return true;
